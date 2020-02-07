@@ -3,16 +3,61 @@ class MoviesController < ApplicationController
   def movie_params
     params.require(:movie).permit(:title, :rating, :description, :release_date)
   end
+  
+  
 
   def show
     id = params[:id] # retrieve movie ID from URI route
     @movie = Movie.find(id) # look up movie by unique ID
     # will render app/views/movies/show.<extension> by default
   end
+  
+  
+  
 
   def index
-    @movies = Movie.all
+    if params[:remove] != nil
+      session[:sortBy] = nil
+      session[:ratings] = nil
+      params[:ratings] = nil
+      params[:sortBy]= nil
+      params[:remove]= nil
+    end
+    
+    @all_ratings = Movie.getRatings
+    
+    if params[:sortBy] != nil                     
+      @ddlValue=params[:sortBy]
+    else
+      if session[:sortBy] != nil
+        @ddlValue = session[:sortBy]
+      end
+    end
+    
+    if params[:ratings] != nil
+       @ratings=params[:ratings]
+    else
+      if session[:ratings] != nil
+        @ratings = session[:ratings]
+      else
+        @ratings = Hash[@all_ratings.map {|x| [x, 1]}]
+      end
+    end
+       
+    session[:sortBy] = @ddlValue
+    session[:ratings] = @ratings
+    
+   if(@ddlValue != nil)
+     @movies =Movie.order(@ddlValue.to_sym).where(:rating => @ratings.keys)
+   else
+     @movies =Movie.where(:rating => @ratings.keys)
+   end
   end
+  
+  
+  
+  
+  
 
   def new
     # default: render 'new' template
